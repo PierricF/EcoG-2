@@ -4,7 +4,197 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
 ```
 
+# Installation des packages
+``` {bash,eval=FALSE}
+sudo apt-get update -y 
+sudo apt-get install -y libbz2-dev
+sudo apt-get install -y liblzma-dev
+```
+```{r, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("BiocStyle")
+BiocManager::install("Rhtslib")
+```
+```{r, eval=FALSE}
+library("knitr")
+library("BiocStyle")
+.cran_packages <- c("ggplot2", "gridExtra", "devtools")
+install.packages(.cran_packages) 
+.bioc_packages <- c("dada2", "phyloseq", "DECIPHER", "phangorn")
+BiocManager::install(.bioc_packages)
+sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
+install.packages("VennDiagram")
+```
+
+# Chargement des packages  
+```{r, message=FALSE}
+library("knitr")
+library("BiocStyle")
+.cran_packages <- c("ggplot2", "gridExtra")
+.bioc_packages <- c("dada2", "phyloseq", "DECIPHER", "phangorn")
+sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
+library("VennDiagram")
+```
+
+```{r}
+set.seed(100)
+```
+
+# Préparation des données  
+On télécharge les données dans /EcoG-2/CC2_data.  
+On indique le chemin vers nos données.
+```{r}
+path <- "/home/rstudio/EcoG-2/CC2_data"
+list.files(path)
+```
+Répartir les reads, extraire les noms, 
+```{r}
+fnFs <- sort(list.files(path, pattern = "_1.fastq.gz"))
+fnRs <- sort(list.files(path, pattern = "_2.fastq.gz"))
+
+sampleNames <- sapply(strsplit(fnFs,"_"),'[',1)    
+
+fnFs <- file.path(path,fnFs)  
+fnRs <- file.path(path,fnRs)
+```
+Inspection des profils qualité
+```{r}
+plotQualityProfile(fnFs[1:2])
+```  
+On a une bonne qualité pour les reads forward. On choisit d'ôter quelques derniers nucléotides en coupant à la 140e position en plus d'enlever les 10 premières bases, qui sont plus susceptibles de contenir des erreurs.
+```{r}
+plotQualityProfile(fnRs[1:2])
+```  
+On a une bonne qualité pour les reads reverse. On choisit d'ôter quelques derniers nucléotides en coupant à la 130e position en plus d'enlever les 10 premières bases, qui sont plus susceptibles de contenir des erreurs.  
+
+Définir les noms de fichiers pour les fastq.gz filtrés
+```{r}
+filt_path <- file.path(path,"filtered") 
+if(!file_test("-d",filt_path)) dir.create(filt_path)
+filtFs <- file.path(filt_path,paste0(sampleNames, "_F_filt.fastq.gz"))
+filtRs <- file.path(filt_path,paste0(sampleNames, "_R_filt.fastq.gz"))
+```
+Filtrer les reads
+```{r}
+out <- filterAndTrim(fnFs,filtFs,fnRs,filtRs,truncLen=c(140,130),
+                     maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
+head(out)
+```
+
+# Définir les ASVs  
+Dérépliquer
+```{r}
+derepFs <- derepFastq(filtFs, verbose=TRUE)  
+derepRs <- derepFastq(filtRs, verbose=TRUE)
+
+names(derepFs) <- sampleNames
+names(derepRs) <- sampleNames
+```
+Estimation du taux d'erreur
+```{r}
+errF <- learnErrors(filtFs, multithread=TRUE )
+errR <- learnErrors(filtRs, multithread=TRUE)  
+plotErrors(errF, nominalQ=TRUE)
+plotErrors(errR, nominalQ=TRUE)
+```  
+Les taux d'erreur pour chaque transition possible (A→C, A→G, ...) sont indiqués. Les points sont les taux d'erreur observés pour chaque score de qualité du consensus.  
+* La ligne noire montre les taux d'erreur estimés.  
+* La ligne rouge montre les taux d'erreur attendus selon la définition nominale du Q-score.  
+Ici, les taux d'erreur estimés (ligne noire) correspondent bien aux taux observés (points), et les taux d'erreur diminuent avec l'augmentation de la qualité, comme prévu. Tout semble raisonnable et nous poursuivons avec confiance.  
+
+Inférence  
+```{r}
+dadaFs <- dada(derepFs, err=errF, multithread=TRUE)  
+dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
+```
+Inspection du premier objet.
+```{r}
+dadaFs[[1]] 
+```
+# Construire le tableau des séquences et supprimer les chimères  
+Fusion des reads appariés.
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs)
+```
+Inspecter le data.frame de fusion du premier échantillon.
+```{r}
+head(mergers[[1]])
+```
+Construction d'une table d'ASV
+```{r}
+seqtabAll <- makeSequenceTable(mergers[!grepl("Mock", names(mergers))])  
+table(nchar(getSequences(seqtabAll)))  
+```
+Ce tableau contient 1226 ASV, et les longueurs de nos séquences fusionnées se situent toutes dans la plage attendue pour cet amplicon V4, en majorité à 253 nucléotides.  
+
+Suppression des chimères.
+```{r}
+seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
+1-ncol(seqtabNoC)/ncol(seqtabAll)
+```
+102 chimères ont été supprimées, soit 8% de nos ASVs.  
+
+# Assigner la taxonomie
+Acquisition du jeu d'entraînement Silva (*non-exécuté*)
+```{bash, eval=FALSE}
+cd home/rstudio
+wget https://zenodo.org/record/4587955/files/silva_nr99_v138.1_train_set.fa.gz   
+wget https://zenodo.org/record/4587955/files/silva_species_assignment_v138.1.fa.gz
+```
+
+Assignement taxonomique
+```{r}
+taxTab <- assignTaxonomy(seqtabNoC, "/home/rstudio/EcoG-2/silva_nr99_v138.1_train_set.fa.gz", multithread=TRUE)
+taxTab <- addSpecies(taxTab, "/home/rstudio/EcoG-2/silva_species_assignment_v138.1.fa.gz")
+
+unname(head(taxTab))
+```
+
+Arbre phylogénétique
+```{r}
+seqs <- getSequences(seqtabNoC)
+names(seqs) <- seqs # This propagates to the tip labels of the tree
+alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA,verbose=FALSE)
+phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
+dm <- dist.ml(phangAlign)
+treeNJ <- NJ(dm) # Note, tip order != sequence order
+fit = pml(treeNJ, data=phangAlign)
+fitGTR <- update(fit, k=4, inv=0.2)
+fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+        rearrangement = "stochastic", control = pml.control(trace = 0))
+plot(fitGTR)
+```
+
+# Phyloseq
+Combiner les données dans un objet phyloseq
+```{r}
+ps <- phyloseq(otu_table(seqtabNoC, taxa_are_rows=FALSE),   
+               tax_table(taxTab),phy_tree(fitGTR$tree))     
+ps <- prune_samples(sample_names(ps) != "Mock", ps)  
+ps
+```
+
+
+
+
+```{r}
+samples.out <- rownames(seqtabNoC)  !!   = sampleNames  !!
+boues <- seqtabNoC
+samdf <- data.frame(Placard=placard, Frigo=frigo)
+samdf$Placard <- c("p1","p2","p3","p4","p5", "p6","p7","p8","p9","p10")
+samdf$Frigo[samdf$Placard==10] <- c("f1","f2","f3","f4","f5", "f6","f7","f8","f9","f10")
+rownames(samdf) <- samples.out
+```
+
+
+
+# Alpha-diversité
+```{r}
+
+```
 
