@@ -147,7 +147,7 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 
 # Assigner la taxonomie
 Acquisition du jeu d'entraînement Silva (*non-exécuté*)
-```{bash, cache=TRUE}
+```{bash, cache=TRUE, messsage=FALSE}
 cd home/rstudio
 wget https://zenodo.org/record/4587955/files/silva_nr99_v138.1_train_set.fa.gz   
 wget https://zenodo.org/record/4587955/files/silva_species_assignment_v138.1.fa.gz
@@ -216,7 +216,7 @@ ps
 
 # Courbes de raréfaction
 ```{r}
-rarefy(ps,sampleType)
+#rarefy(ps,sampleType)
 ```
 
 # Abondance différentielle
@@ -231,10 +231,10 @@ plot_bar(ps.top20, x="Types", fill="Phylum")
 
 # Alpha-diversité
 ```{r}
-estimate_richness(ps, split = TRUE, measures = NULL)
+#estimate_richness(ps, split = TRUE, measures = NULL)
 
 plot_richness(ps)
-chao1(ps)
+#chao1(ps)
 
 plot_richness(ps, x="Types", measures="Chao1")
 ```
