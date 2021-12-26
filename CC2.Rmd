@@ -28,7 +28,8 @@ install.packages(.cran_packages)
 BiocManager::install(.bioc_packages)
 sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 install.packages("vegan")
-install.packages("VennDiagram")
+install.packages("dplyr")
+install.packages("venn")
 ```
 
 # Chargement des packages  
@@ -39,7 +40,8 @@ library("BiocStyle")
 .bioc_packages <- c("dada2", "phyloseq", "DECIPHER", "phangorn")
 sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 library("vegan")
-library("VennDiagram")
+library("dplyr")
+library("venn")
 ```
 
 ```{r}
@@ -216,35 +218,60 @@ ps
 
 # Courbes de raréfaction
 ```{r}
-#rarefy(ps,sampleType)
+rarecurve(seqtabNoC, step=10, ylab="ASVs", label=F)
 ```
+Cela montre que la profondeur de séquençage est optimale. Cependant, de nombreuses tentatives n'ont pas suffi à colorer les courbes en fonction de l'échantillon (boues, déjections, compost).
 
 # Abondance différentielle
 ```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Types", fill="Phylum") 
+ps.rel = transform_sample_counts(ps, function(x) x/sum(x)*100)   # Agglomération des taxa
+glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)
+ps.melt <- psmelt(glom)
+ps.melt$Phylum <- as.character(ps.melt$Phylum)
+
+ps.melt <- ps.melt %>%
+  group_by(Types, Phylum) %>%
+  mutate(median=median(Abundance))  # Sélection des groupes avec median>1
+keep <- unique(ps.melt$Phylum[ps.melt$median > 1])
+ps.melt$Phylum[!(ps.melt$Phylum %in% keep)] <- "others"   #pour obtenir les mêmes lignes ensemble
+ps.melt_sum <- ps.melt %>%
+  group_by(Types,Phylum) %>%
+  summarise(Abundance=sum(Abundance)/5)
+
+ps.melt_sum$Types <- factor(ps.melt_sum$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les barres dans le bon ordre
+
+ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) + 
+  geom_bar(stat = "identity", aes(fill=Phylum)) + 
+  labs(x="", y="%") +
+  facet_wrap(~Types, scales= "free_x", nrow=1) +
+  theme_classic() + 
+  theme(strip.background = element_blank(), 
+        axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
 ```
-
-
+A la différence de la publication d'origine, ici les Planctomycetota sont présents en abondance supérieure à celle des Sumerlaeota.
 
 # Alpha-diversité
 ```{r}
-#estimate_richness(ps, split = TRUE, measures = NULL)
 
-plot_richness(ps)
 #chao1(ps)
-
 plot_richness(ps, x="Types", measures="Chao1")
+
 ```
 
 # Bêta-diversité
 ```{r}
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
-
-plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray NMDS")
-
+plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")
 ```
+Les échantillons sont bien regroupés par type de prélèvement et les trois groupes sont très éloignés les uns des autres, comme on le retrouve sur la figure de l'article. Il y a donc très peu d'ASVs en commun entre les boues, les déjections, le compost. 
+Après de nombreuses tentatives, je ne suis pas parvenu à mettre la légende dans l'ordre (boues, déjections, compost).
+
+# Diagramme de Venn
+```{r}
+
+venn(3, snames=c("Boues","Déjections","Compost"))
+```
+
+# Abondance des ASVs en commun
 

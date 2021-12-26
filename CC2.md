@@ -106,92 +106,6 @@ BiocManager::install(.bioc_packages)
 sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 ```
 
-    ## Loading required package: ggplot2
-
-    ## Loading required package: gridExtra
-
-    ## Loading required package: devtools
-
-    ## Loading required package: usethis
-
-    ## Loading required package: dada2
-
-    ## Loading required package: Rcpp
-
-    ## Loading required package: phyloseq
-
-    ## Loading required package: DECIPHER
-
-    ## Loading required package: Biostrings
-
-    ## Loading required package: BiocGenerics
-
-    ## 
-    ## Attaching package: 'BiocGenerics'
-
-    ## The following object is masked from 'package:gridExtra':
-    ## 
-    ##     combine
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     IQR, mad, sd, var, xtabs
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     anyDuplicated, append, as.data.frame, basename, cbind, colnames,
-    ##     dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
-    ##     grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
-    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-    ##     rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
-    ##     union, unique, unsplit, which.max, which.min
-
-    ## Loading required package: S4Vectors
-
-    ## Loading required package: stats4
-
-    ## 
-    ## Attaching package: 'S4Vectors'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     expand.grid, I, unname
-
-    ## Loading required package: IRanges
-
-    ## 
-    ## Attaching package: 'IRanges'
-
-    ## The following object is masked from 'package:phyloseq':
-    ## 
-    ##     distance
-
-    ## Loading required package: XVector
-
-    ## Loading required package: GenomeInfoDb
-
-    ## 
-    ## Attaching package: 'Biostrings'
-
-    ## The following object is masked from 'package:base':
-    ## 
-    ##     strsplit
-
-    ## Loading required package: RSQLite
-
-    ## Loading required package: parallel
-
-    ## Loading required package: phangorn
-
-    ## Loading required package: ape
-
-    ## 
-    ## Attaching package: 'ape'
-
-    ## The following object is masked from 'package:Biostrings':
-    ## 
-    ##     complement
-
     ##   ggplot2 gridExtra  devtools     dada2  phyloseq  DECIPHER  phangorn 
     ##      TRUE      TRUE      TRUE      TRUE      TRUE      TRUE      TRUE
 
@@ -203,7 +117,14 @@ install.packages("vegan")
     ## (as 'lib' is unspecified)
 
 ``` r
-install.packages("VennDiagram")
+install.packages("dplyr")
+```
+
+    ## Installing package into '/usr/local/lib/R/site-library'
+    ## (as 'lib' is unspecified)
+
+``` r
+install.packages("venn")
 ```
 
     ## Installing package into '/usr/local/lib/R/site-library'
@@ -224,7 +145,8 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 
 ``` r
 library("vegan")
-library("VennDiagram")
+library("dplyr")
+library("venn")
 ```
 
 ``` r
@@ -4971,37 +4893,58 @@ ps
 # Courbes de raréfaction
 
 ``` r
-#rarefy(ps,sampleType)
+rarecurve(seqtabNoC, step=10, ylab="ASVs", label=F)
 ```
+
+![](CC2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- --> Cela montre que
+la profondeur de séquençage est optimale. Cependant, de nombreuses
+tentatives n’ont pas suffi à colorer les courbes en fonction de
+l’échantillon (boues, déjections, compost).
 
 # Abondance différentielle
 
 ``` r
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Types", fill="Phylum") 
+ps.rel = transform_sample_counts(ps, function(x) x/sum(x)*100)   # Agglomération des taxa
+glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)
+ps.melt <- psmelt(glom)
+ps.melt$Phylum <- as.character(ps.melt$Phylum)
+
+ps.melt <- ps.melt %>%
+  group_by(Types, Phylum) %>%
+  mutate(median=median(Abundance))  # Sélection des groupes avec median>1
+keep <- unique(ps.melt$Phylum[ps.melt$median > 1])
+ps.melt$Phylum[!(ps.melt$Phylum %in% keep)] <- "others"   #pour obtenir les mêmes lignes ensemble
+ps.melt_sum <- ps.melt %>%
+  group_by(Types,Phylum) %>%
+  summarise(Abundance=sum(Abundance)/5)
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+    ## `summarise()` has grouped output by 'Types'. You can override using the `.groups` argument.
+
+``` r
+ps.melt_sum$Types <- factor(ps.melt_sum$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les barres dans le bon ordre
+
+ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) + 
+  geom_bar(stat = "identity", aes(fill=Phylum)) + 
+  labs(x="", y="%") +
+  facet_wrap(~Types, scales= "free_x", nrow=1) +
+  theme_classic() + 
+  theme(strip.background = element_blank(), 
+        axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
+```
+
+![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- --> A la différence
+de la publication d’origine, ici les Planctomycetota sont présents en
+abondance supérieure à celle des Sumerlaeota.
 
 # Alpha-diversité
 
 ``` r
-#estimate_richness(ps, split = TRUE, measures = NULL)
-
-plot_richness(ps)
-```
-
-![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
-
-``` r
 #chao1(ps)
-
 plot_richness(ps, x="Types", measures="Chao1")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-28-2.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 # Bêta-diversité
 
@@ -5010,44 +4953,44 @@ ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
 ```
 
-    ## Run 0 stress 9.407978e-05 
-    ## Run 1 stress 9.711485e-05 
+    ## Run 0 stress 0.00009407978 
+    ## Run 1 stress 0.00009711485 
     ## ... Procrustes: rmse 0.1280181  max resid 0.1689617 
-    ## Run 2 stress 9.123674e-05 
+    ## Run 2 stress 0.00009123674 
     ## ... New best solution
     ## ... Procrustes: rmse 0.1379452  max resid 0.1911845 
     ## Run 3 stress 0.0008693728 
-    ## Run 4 stress 8.667921e-05 
+    ## Run 4 stress 0.00008667921 
     ## ... New best solution
     ## ... Procrustes: rmse 0.02625075  max resid 0.03704369 
     ## Run 5 stress 0.3546489 
-    ## Run 6 stress 9.322212e-05 
+    ## Run 6 stress 0.00009322212 
     ## ... Procrustes: rmse 0.005084721  max resid 0.007433207 
-    ## Run 7 stress 9.818141e-05 
+    ## Run 7 stress 0.00009818141 
     ## ... Procrustes: rmse 0.06213774  max resid 0.08256831 
     ## Run 8 stress 0.330287 
-    ## Run 9 stress 9.737697e-05 
+    ## Run 9 stress 0.00009737697 
     ## ... Procrustes: rmse 0.01765278  max resid 0.02517663 
-    ## Run 10 stress 9.430361e-05 
+    ## Run 10 stress 0.00009430361 
     ## ... Procrustes: rmse 0.04194645  max resid 0.05750509 
-    ## Run 11 stress 8.965387e-05 
+    ## Run 11 stress 0.00008965387 
     ## ... Procrustes: rmse 0.09322377  max resid 0.1182402 
     ## Run 12 stress 0.001185915 
-    ## Run 13 stress 7.975256e-05 
+    ## Run 13 stress 0.00007975256 
     ## ... New best solution
     ## ... Procrustes: rmse 0.07561421  max resid 0.09922308 
-    ## Run 14 stress 9.638623e-05 
+    ## Run 14 stress 0.00009638623 
     ## ... Procrustes: rmse 0.02496443  max resid 0.03385009 
-    ## Run 15 stress 9.381844e-05 
+    ## Run 15 stress 0.00009381844 
     ## ... Procrustes: rmse 0.1126189  max resid 0.149425 
-    ## Run 16 stress 9.396349e-05 
+    ## Run 16 stress 0.00009396349 
     ## ... Procrustes: rmse 0.02274824  max resid 0.03080654 
     ## Run 17 stress 0.001322823 
-    ## Run 18 stress 9.635608e-05 
+    ## Run 18 stress 0.00009635608 
     ## ... Procrustes: rmse 0.09897282  max resid 0.1363372 
-    ## Run 19 stress 9.425525e-05 
+    ## Run 19 stress 0.00009425525 
     ## ... Procrustes: rmse 0.06251906  max resid 0.08660971 
-    ## Run 20 stress 9.831433e-05 
+    ## Run 20 stress 0.00009831433 
     ## ... Procrustes: rmse 0.01169614  max resid 0.01570907 
     ## *** No convergence -- monoMDS stopping criteria:
     ##      3: no. of iterations >= maxit
@@ -5058,7 +5001,23 @@ ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
     ## you may have insufficient data
 
 ``` r
-plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray NMDS")
+plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- --> Les
+échantillons sont bien regroupés par type de prélèvement et les trois
+groupes sont très éloignés les uns des autres, comme on le retrouve sur
+la figure de l’article. Il y a donc très peu d’ASVs en commun entre les
+boues, les déjections, le compost. Après de nombreuses tentatives, je ne
+suis pas parvenu à mettre la légende dans l’ordre (boues, déjections,
+compost).
+
+# Diagramme de Venn
+
+``` r
+venn(3, snames=c("Boues","Déjections","Compost"))
+```
+
+![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+# Abondance des ASVs en commun
