@@ -124,7 +124,7 @@ install.packages("dplyr")
     ## (as 'lib' is unspecified)
 
 ``` r
-install.packages("venn")
+install.packages("ggvenn")
 ```
 
     ## Installing package into '/usr/local/lib/R/site-library'
@@ -146,7 +146,7 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 ``` r
 library("vegan")
 library("dplyr")
-library("venn")
+library("ggvenn")
 ```
 
 ``` r
@@ -600,7 +600,7 @@ plot(fitGTR)
 Classification des échantillons
 
 ``` r
-#Après des heures de tentatives, je me suis résigné à assigner l'origine de chaque échantillon mannuellement...
+#Après des heures de tentatives, je me suis résigné à assigner l'origine de chaque échantillon manuellement...
 sampleNumber <- as.integer(sapply(strsplit(sampleNames, "52"), `[`, 2)) 
 sampleType <- data.frame(sampleNames)
 sampleType$Types <- "Boues"
@@ -664,17 +664,17 @@ l’échantillon (boues, déjections, compost).
 # Abondance différentielle
 
 ``` r
-ps.rel = transform_sample_counts(ps, function(x) x/sum(x)*100)   # Agglomération des taxa
-glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)
+ps.rel <- transform_sample_counts(ps, function(x) x/sum(x)*100)   
+glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)    # Agglomération des taxa
 ps.melt <- psmelt(glom)
 ps.melt$Phylum <- as.character(ps.melt$Phylum)
 
-ps.melt <- ps.melt %>%
+ps.melt <- ps.melt %>% 
   group_by(Types, Phylum) %>%
-  mutate(median=median(Abundance))  # Sélection des groupes avec median>1
-keep <- unique(ps.melt$Phylum[ps.melt$median > 1])
-ps.melt$Phylum[!(ps.melt$Phylum %in% keep)] <- "others"   #pour obtenir les mêmes lignes ensemble
-ps.melt_sum <- ps.melt %>%
+  mutate(median=median(Abundance))  
+keep <- unique(ps.melt$Phylum[ps.melt$median > 1])    # Sélection des groupes avec median>1
+ps.melt$Phylum[!(ps.melt$Phylum %in% keep)] <- "others"   
+ps.melt_sum <- ps.melt %>%      #pour obtenir les mêmes lignes ensemble
   group_by(Types,Phylum) %>%
   summarise(Abundance=sum(Abundance)/5)
 ```
@@ -700,7 +700,6 @@ abondance supérieure à celle des Sumerlaeota.
 # Alpha-diversité
 
 ``` r
-#chao1(ps) 
 plot_richness(ps, x="Types", measures="Chao1")
 ```
 
@@ -775,9 +774,62 @@ compost).
 # Diagramme de Venn
 
 ``` r
-venn(3, snames=c("Boues","Déjections","Compost"))
+ps.melt <- psmelt(ps.prop)
+ASVdf <- data.frame(ASV=ps.melt$OTU, Abondance=as.numeric(ps.melt$Abundance), Types=ps.melt$Types)
+
+# Grouper les échantillons 
+library(dplyr)
+ASVdf <- ASVdf %>%
+group_by(ASV, Types) %>%
+summarise(Abondance = sum(Abondance))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+    ## `summarise()` has grouped output by 'ASV'. You can override using the `.groups` argument.
 
-# Abondance des ASVs en commun
+``` r
+# Transformer en présence/absence
+pres_abs <- ASVdf
+pres_abs <- transform(pres_abs, Abondance = Abondance/Abondance) 
+pres_abs <- subset(pres_abs , is.na(pres_abs$Abondance) == F)
+pres_abs <- pres_abs[,-3]
+
+# Conception du diagramme
+ASVlist <- list(Boues=pres_abs$ASV[pres_abs$Types=="Boues"], Déjections=pres_abs$ASV[pres_abs$Types=="Déjections"], Compost=pres_abs$ASV[pres_abs$Types=="Compost"])
+library("ggvenn")
+ggvenn(ASVlist, fill_color = c("chocolate4", "azure3", "green"), stroke_linetype = "blank", set_name_size = 8)
+```
+
+![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> Ici, chaque
+catégorie comporte plus d’ASVs que ce qu’ont trouvé les chercheurs. Le
+traitement des données a dû être différent. Cependant, ce sont bien les
+mêmes proportions qui sont retrouvées.
+
+# Nouvelle question
+
+On cherche ici à répondre à une question à laquelle l’article n’a pas
+répondu : quelle abondance représente les 7 ASVs partagés par les trois
+échantillons ?
+
+``` r
+#ASVdf <- ASVdf[(ASVdf$Types=="Boues") & (ASVdf$Types=="Déjections") & (ASVdf$Types=="Compost")]
+ASVdf <- ASVdf %>%
+group_by(ASV) %>%
+summarise(Abondance = sum(Abondance))
+
+sum(ASVdf$Abondance)[ASVdf$Types=="Boues" & ASVdf$Types=="Déjections" & ASVdf$Types=="Compost"]
+```
+
+    ## Warning: Unknown or uninitialised column: `Types`.
+
+    ## Warning: Unknown or uninitialised column: `Types`.
+
+    ## Warning: Unknown or uninitialised column: `Types`.
+
+    ## numeric(0)
+
+``` r
+#fusion <- merge(pres_abs, ASVdf, all.x=TRUE) 
+#fusion <- fusion[,-1]
+#Abond_list <- list(Boues=fusion$Abondance[fusion$Types=="Boues"], Déjections=fusion$Abondance[fusion$Types=="Déjections"], Compost=fusion$Abondance[fusion$Types=="Compost"])
+#ggvenn(Abond_list, fill_color = c("chocolate4", "azure3", "green"), stroke_linetype = "blank", set_name_size = 8)
+```
