@@ -9,126 +9,25 @@ sudo apt-get install -y libbz2-dev
 sudo apt-get install -y liblzma-dev
 ```
 
-    ## sudo: unable to resolve host 012e23cc2553: Name or service not known
-    ## Get:1 http://security.ubuntu.com/ubuntu focal-security InRelease [114 kB]
-    ## Hit:2 http://archive.ubuntu.com/ubuntu focal InRelease
-    ## Get:3 http://archive.ubuntu.com/ubuntu focal-updates InRelease [114 kB]
-    ## Get:4 http://archive.ubuntu.com/ubuntu focal-backports InRelease [108 kB]
-    ## Fetched 336 kB in 1s (394 kB/s)
-    ## Reading package lists...
-    ## sudo: unable to resolve host 012e23cc2553: Name or service not known
-    ## Reading package lists...
-    ## Building dependency tree...
-    ## Reading state information...
-    ## libbz2-dev is already the newest version (1.0.8-2).
-    ## 0 upgraded, 0 newly installed, 0 to remove and 17 not upgraded.
-    ## sudo: unable to resolve host 012e23cc2553: Name or service not known
-    ## Reading package lists...
-    ## Building dependency tree...
-    ## Reading state information...
-    ## liblzma-dev is already the newest version (5.2.4-1ubuntu1).
-    ## 0 upgraded, 0 newly installed, 0 to remove and 17 not upgraded.
-
 ``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("BiocStyle")
-```
-
-    ## 'getOption("repos")' replaces Bioconductor standard repositories, see
-    ## '?repositories' for details
-    ## 
-    ## replacement repositories:
-    ##     CRAN: https://packagemanager.rstudio.com/all/__linux__/focal/latest
-
-    ## Bioconductor version 3.14 (BiocManager 1.30.16), R 4.1.2 (2021-11-01)
-
-    ## Warning: package(s) not installed when version(s) same as current; use `force = TRUE` to
-    ##   re-install: 'BiocStyle'
-
-    ## Installation paths not writeable, unable to update packages
-    ##   path: /usr/local/lib/R/library
-    ##   packages:
-    ##     Matrix
-
-``` r
 BiocManager::install("Rhtslib")
 ```
-
-    ## 'getOption("repos")' replaces Bioconductor standard repositories, see
-    ## '?repositories' for details
-    ## 
-    ## replacement repositories:
-    ##     CRAN: https://packagemanager.rstudio.com/all/__linux__/focal/latest
-    ## 
-    ## Bioconductor version 3.14 (BiocManager 1.30.16), R 4.1.2 (2021-11-01)
-
-    ## Warning: package(s) not installed when version(s) same as current; use `force = TRUE` to
-    ##   re-install: 'Rhtslib'
-
-    ## Installation paths not writeable, unable to update packages
-    ##   path: /usr/local/lib/R/library
-    ##   packages:
-    ##     Matrix
 
 ``` r
 library("knitr")
 library("BiocStyle")
 .cran_packages <- c("ggplot2", "gridExtra", "devtools")
 install.packages(.cran_packages) 
-```
-
-    ## Installing packages into '/usr/local/lib/R/site-library'
-    ## (as 'lib' is unspecified)
-
-``` r
 .bioc_packages <- c("dada2", "phyloseq", "DECIPHER", "phangorn")
 BiocManager::install(.bioc_packages)
-```
-
-    ## 'getOption("repos")' replaces Bioconductor standard repositories, see
-    ## '?repositories' for details
-    ## 
-    ## replacement repositories:
-    ##     CRAN: https://packagemanager.rstudio.com/all/__linux__/focal/latest
-
-    ## Bioconductor version 3.14 (BiocManager 1.30.16), R 4.1.2 (2021-11-01)
-
-    ## Warning: package(s) not installed when version(s) same as current; use `force = TRUE` to
-    ##   re-install: 'dada2' 'phyloseq' 'DECIPHER' 'phangorn'
-
-    ## Installation paths not writeable, unable to update packages
-    ##   path: /usr/local/lib/R/library
-    ##   packages:
-    ##     Matrix
-
-``` r
 sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
-```
-
-    ##   ggplot2 gridExtra  devtools     dada2  phyloseq  DECIPHER  phangorn 
-    ##      TRUE      TRUE      TRUE      TRUE      TRUE      TRUE      TRUE
-
-``` r
 install.packages("vegan")
-```
-
-    ## Installing package into '/usr/local/lib/R/site-library'
-    ## (as 'lib' is unspecified)
-
-``` r
 install.packages("dplyr")
-```
-
-    ## Installing package into '/usr/local/lib/R/site-library'
-    ## (as 'lib' is unspecified)
-
-``` r
 install.packages("ggvenn")
 ```
-
-    ## Installing package into '/usr/local/lib/R/site-library'
-    ## (as 'lib' is unspecified)
 
 # Chargement des packages
 
@@ -581,11 +480,11 @@ Arbre phylogénétique
 
 ``` r
 seqs <- getSequences(seqtabNoC)
-names(seqs) <- seqs # This propagates to the tip labels of the tree
+names(seqs) <- seqs 
 alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA,verbose=FALSE)
 phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
 dm <- dist.ml(phangAlign)
-treeNJ <- NJ(dm) # Note, tip order != sequence order
+treeNJ <- NJ(dm) 
 fit = pml(treeNJ, data=phangAlign)
 fitGTR <- update(fit, k=4, inv=0.2)
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
@@ -632,6 +531,10 @@ ps
     ## sample_data() Sample Data:       [ 15 samples by 2 sample variables ]
     ## tax_table()   Taxonomy Table:    [ 1124 taxa by 7 taxonomic ranks ]
     ## phy_tree()    Phylogenetic Tree: [ 1124 tips and 1122 internal nodes ]
+
+``` r
+ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les échantillons dans le bon ordre
+```
 
 On remplace les séquences par ASV.
 
@@ -682,12 +585,9 @@ ps.melt_sum <- ps.melt %>%      #pour obtenir les mêmes lignes ensemble
     ## `summarise()` has grouped output by 'Types'. You can override using the `.groups` argument.
 
 ``` r
-ps.melt_sum$Types <- factor(ps.melt_sum$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les barres dans le bon ordre
-
 ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) + 
   geom_bar(stat = "identity", aes(fill=Phylum)) + 
   labs(x="", y="%") +
-  facet_wrap(~Types, scales= "free_x", nrow=1) +
   theme_classic() + 
   theme(strip.background = element_blank(), 
         axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
@@ -700,6 +600,7 @@ abondance supérieure à celle des Sumerlaeota.
 # Alpha-diversité
 
 ``` r
+ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost"))
 plot_richness(ps, x="Types", measures="Chao1")
 ```
 
@@ -765,11 +666,9 @@ plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")
 
 ![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- --> Les
 échantillons sont bien regroupés par type de prélèvement et les trois
-groupes sont très éloignés les uns des autres, comme on le retrouve sur
+points sont très éloignés les uns des autres, comme on le retrouve sur
 la figure de l’article. Il y a donc très peu d’ASVs en commun entre les
-boues, les déjections, le compost. Après de nombreuses tentatives, je ne
-suis pas parvenu à mettre la légende dans l’ordre (boues, déjections,
-compost).
+boues, les déjections, le compost.
 
 # Diagramme de Venn
 
@@ -811,25 +710,95 @@ répondu : quelle abondance représente les 7 ASVs partagés par les trois
 échantillons ?
 
 ``` r
-#ASVdf <- ASVdf[(ASVdf$Types=="Boues") & (ASVdf$Types=="Déjections") & (ASVdf$Types=="Compost")]
+# Afficher les 7 ASVs en commun
+pres_abs$Types <- as.character(pres_abs$Types)
+pres_abs$Types [pres_abs$Types == "Boues"] <- 1
+pres_abs$Types [pres_abs$Types == "Déjections"] <- 2
+pres_abs$Types [pres_abs$Types == "Compost"] <- 3
+pres_abs$Types <-as.numeric(pres_abs$Types)
+pres_abs <- pres_abs %>%
+group_by(ASV) %>%
+summarise(Types=sum(Types))
+commonASV <- pres_abs$ASV[pres_abs$Types==6]
+commonASV 
+```
+
+    ## [1] "ASV126" "ASV148" "ASV178" "ASV249" "ASV380" "ASV67"  "ASV85"
+
+``` r
+# Sélectionner ces ASV
 ASVdf <- ASVdf %>%
 group_by(ASV) %>%
 summarise(Abondance = sum(Abondance))
-
-sum(ASVdf$Abondance)[ASVdf$Types=="Boues" & ASVdf$Types=="Déjections" & ASVdf$Types=="Compost"]
+print(ASVdf$Abondance[ASVdf$ASV=="ASV126"])
 ```
 
-    ## Warning: Unknown or uninitialised column: `Types`.
-
-    ## Warning: Unknown or uninitialised column: `Types`.
-
-    ## Warning: Unknown or uninitialised column: `Types`.
-
-    ## numeric(0)
+    ## [1] 0.02343588
 
 ``` r
-#fusion <- merge(pres_abs, ASVdf, all.x=TRUE) 
-#fusion <- fusion[,-1]
-#Abond_list <- list(Boues=fusion$Abondance[fusion$Types=="Boues"], Déjections=fusion$Abondance[fusion$Types=="Déjections"], Compost=fusion$Abondance[fusion$Types=="Compost"])
-#ggvenn(Abond_list, fill_color = c("chocolate4", "azure3", "green"), stroke_linetype = "blank", set_name_size = 8)
+commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="ASV178" | ASVdf$ASV=="ASV249" | ASVdf$ASV=="ASV380" | ASVdf$ASV=="ASV67" | ASVdf$ASV=="ASV85"),]
+
+# Représentation graphique   
+abond_df <- data.frame(ASV = c("Communs", "Totaux"), Abondance_pcent = c(sum(commonASVdf$Abondance)/15, 1), ASV_proportion = c(7/1124, 1))
+abond_df
 ```
+
+    ##       ASV Abondance_pcent ASV_proportion
+    ## 1 Communs      0.01115502    0.006227758
+    ## 2  Totaux      1.00000000    1.000000000
+
+``` r
+(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])*100
+```
+
+    ## [1] 1.115502
+
+``` r
+(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])/(abond_df$ASV_proportion[1]/abond_df$ASV_proportion[2])
+```
+
+    ## [1] 1.791177
+
+``` r
+library(ggpubr)
+```
+
+    ## 
+    ## Attaching package: 'ggpubr'
+
+    ## The following object is masked from 'package:VennDiagram':
+    ## 
+    ##     rotate
+
+    ## The following object is masked from 'package:ape':
+    ## 
+    ##     rotate
+
+``` r
+ggarrange(
+ggplot(abond_df, aes(x="", y=Abondance_pcent, fill=ASV))+
+geom_bar(width = 1, stat = "identity")+ 
+coord_polar("y", start=0),
+ggplot(abond_df, aes(x="", y=ASV_proportion, fill=ASV))+
+geom_bar(width = 1, stat = "identity")+ 
+coord_polar("y", start=0)
+)
+```
+
+![](CC2_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
+ASVdf <- ASVdf %>% arrange(desc(Abondance))
+ggplot(ASVdf, aes(x=reorder(ASV,Abondance), y=Abondance))+ 
+geom_bar(stat = "identity")+ 
+ggtitle("Abondance des ASV") +
+xlab("ASV")+ 
+geom_segment(aes(x=805, y=0.049668050, xend=1065, yend=0.049668050), arrow=arrow(), size=0.1, color="blue")+
+geom_segment(aes(x=780, y=0.039987351, xend=1040, yend=0.039987351), arrow=arrow(), size=0.1, color="red")+
+geom_segment(aes(x=720, y=0.023435878, xend=980, yend=0.023435878), arrow=arrow(), size=0.1, color="green")+ 
+geom_text(aes(x=765, y=0.057), label="ASV67", size=3, color="blue")+ 
+geom_text(aes(x=740, y=0.042), label="ASV85", size=3, color="red")+ 
+geom_text(aes(x=680, y=0.026), label="ASV126", size=3, color="green")
+```
+
+![](CC2_files/figure-gfm/unnamed-chunk-31-2.png)<!-- -->
