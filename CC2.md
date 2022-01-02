@@ -556,7 +556,12 @@ ps
 # Courbes de raréfaction
 
 ``` r
-rarecurve(seqtabNoC, step=10, ylab="ASVs", label=F)
+col_boues <- "brown4"
+col_déjections <- "darkgoldenrod2"
+col_compost <- "darkolivegreen3"
+colors <- c(col_compost, col_compost, col_compost, col_compost, col_compost, col_boues, col_boues, col_déjections, col_boues, col_déjections, col_déjections, col_déjections, col_boues, col_boues, col_déjections)
+rarecurve(seqtabNoC, step=1000, ylab="ASVs", col=colors, label=F)
+legend("bottomright", legend=c("Boues","Déjections","Compost"), fill=c(col_boues,col_déjections,col_compost))
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- --> Cela montre que
@@ -601,7 +606,8 @@ abondance supérieure à celle des Sumerlaeota.
 
 ``` r
 ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost"))
-plot_richness(ps, x="Types", measures="Chao1")
+plot_richness(ps, x="Types", measures="Chao1", color="Types")+
+scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
@@ -661,7 +667,8 @@ ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
     ## you may have insufficient data
 
 ``` r
-plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")
+plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")+
+scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- --> Les
@@ -694,8 +701,8 @@ pres_abs <- pres_abs[,-3]
 
 # Conception du diagramme
 ASVlist <- list(Boues=pres_abs$ASV[pres_abs$Types=="Boues"], Déjections=pres_abs$ASV[pres_abs$Types=="Déjections"], Compost=pres_abs$ASV[pres_abs$Types=="Compost"])
-library("ggvenn")
-ggvenn(ASVlist, fill_color = c("chocolate4", "azure3", "green"), stroke_linetype = "blank", set_name_size = 8)
+
+ggvenn(ASVlist, fill_color = c(col_boues, col_déjections, col_compost), stroke_linetype = "blank", set_name_size = 8)
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> Ici, chaque
