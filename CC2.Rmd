@@ -8,18 +8,18 @@ knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
 ```
 
 # Installation des packages
-``` {bash,cache=TRUE}
+``` {bash, eval=FALSE}
 sudo apt-get update -y 
 sudo apt-get install -y libbz2-dev
 sudo apt-get install -y liblzma-dev
 ```
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("BiocStyle")
 BiocManager::install("Rhtslib")
 ```
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 library("knitr")
 library("BiocStyle")
 .cran_packages <- c("ggplot2", "gridExtra", "devtools")
@@ -96,7 +96,7 @@ head(out)
 
 # Définir les ASVs  
 Dérépliquer
-```{r}
+```{r, cache=TRUE}
 derepFs <- derepFastq(filtFs, verbose=TRUE)  
 derepRs <- derepFastq(filtRs, verbose=TRUE)
 
@@ -166,11 +166,11 @@ unname(head(taxTab))
 Arbre phylogénétique
 ```{r}
 seqs <- getSequences(seqtabNoC)
-names(seqs) <- seqs # This propagates to the tip labels of the tree
+names(seqs) <- seqs 
 alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA,verbose=FALSE)
 phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
 dm <- dist.ml(phangAlign)
-treeNJ <- NJ(dm) # Note, tip order != sequence order
+treeNJ <- NJ(dm) 
 fit = pml(treeNJ, data=phangAlign)
 fitGTR <- update(fit, k=4, inv=0.2)
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
@@ -205,6 +205,8 @@ ps <- phyloseq(otu_table(seqtabNoC, taxa_are_rows=FALSE),
                tax_table(taxTab),phy_tree(fitGTR$tree))  
 ps <- prune_samples(sample_names(ps) != "Mock", ps)  
 ps
+
+ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les échantillons dans le bon ordre
 ```
 
 On remplace les séquences par ASV.
@@ -238,12 +240,9 @@ ps.melt_sum <- ps.melt %>%      #pour obtenir les mêmes lignes ensemble
   group_by(Types,Phylum) %>%
   summarise(Abundance=sum(Abundance)/5)
 
-ps.melt_sum$Types <- factor(ps.melt_sum$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les barres dans le bon ordre
-
 ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) + 
   geom_bar(stat = "identity", aes(fill=Phylum)) + 
   labs(x="", y="%") +
-  facet_wrap(~Types, scales= "free_x", nrow=1) +
   theme_classic() + 
   theme(strip.background = element_blank(), 
         axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
@@ -252,6 +251,7 @@ A la différence de la publication d'origine, ici les Planctomycetota sont prés
 
 # Alpha-diversité
 ```{r}
+ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost"))
 plot_richness(ps, x="Types", measures="Chao1")
 ```
 
@@ -261,8 +261,7 @@ ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
 plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")
 ```
-Les échantillons sont bien regroupés par type de prélèvement et les trois groupes sont très éloignés les uns des autres, comme on le retrouve sur la figure de l'article. Il y a donc très peu d'ASVs en commun entre les boues, les déjections, le compost. 
-Après de nombreuses tentatives, je ne suis pas parvenu à mettre la légende dans l'ordre (boues, déjections, compost).
+Les échantillons sont bien regroupés par type de prélèvement et les trois points sont très éloignés les uns des autres, comme on le retrouve sur la figure de l'article. Il y a donc très peu d'ASVs en commun entre les boues, les déjections, le compost. 
 
 # Diagramme de Venn
 ```{r}
@@ -291,16 +290,51 @@ Ici, chaque catégorie comporte plus d'ASVs que ce qu'ont trouvé les chercheurs
 # Nouvelle question
 On cherche ici à répondre à une question à laquelle l'article n'a pas répondu : quelle abondance représente les 7 ASVs partagés par les trois échantillons ?
 ```{r}
-#ASVdf <- ASVdf[(ASVdf$Types=="Boues") & (ASVdf$Types=="Déjections") & (ASVdf$Types=="Compost")]
+# Afficher les 7 ASVs en commun
+pres_abs$Types <- as.character(pres_abs$Types)
+pres_abs$Types [pres_abs$Types == "Boues"] <- 1
+pres_abs$Types [pres_abs$Types == "Déjections"] <- 2
+pres_abs$Types [pres_abs$Types == "Compost"] <- 3
+pres_abs$Types <-as.numeric(pres_abs$Types)
+pres_abs <- pres_abs %>%
+group_by(ASV) %>%
+summarise(Types=sum(Types))
+commonASV <- pres_abs$ASV[pres_abs$Types==6]
+commonASV 
+
+# Sélectionner ces ASV
 ASVdf <- ASVdf %>%
 group_by(ASV) %>%
 summarise(Abondance = sum(Abondance))
+print(ASVdf$Abondance[ASVdf$ASV=="ASV126"])
+commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="ASV178" | ASVdf$ASV=="ASV249" | ASVdf$ASV=="ASV380" | ASVdf$ASV=="ASV67" | ASVdf$ASV=="ASV85"),]
 
-sum(ASVdf$Abondance)[ASVdf$Types=="Boues" & ASVdf$Types=="Déjections" & ASVdf$Types=="Compost"]
+# Représentation graphique   
+abond_df <- data.frame(ASV = c("Communs", "Totaux"), Abondance_pcent = c(sum(commonASVdf$Abondance)/15, 1), ASV_proportion = c(7/1124, 1))
+abond_df
 
-#fusion <- merge(pres_abs, ASVdf, all.x=TRUE) 
-#fusion <- fusion[,-1]
-#Abond_list <- list(Boues=fusion$Abondance[fusion$Types=="Boues"], Déjections=fusion$Abondance[fusion$Types=="Déjections"], Compost=fusion$Abondance[fusion$Types=="Compost"])
-#ggvenn(Abond_list, fill_color = c("chocolate4", "azure3", "green"), stroke_linetype = "blank", set_name_size = 8)
+(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])*100
+(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])/(abond_df$ASV_proportion[1]/abond_df$ASV_proportion[2])
+
+library(ggpubr)
+ggarrange(
+ggplot(abond_df, aes(x="", y=Abondance_pcent, fill=ASV))+
+geom_bar(width = 1, stat = "identity")+ 
+coord_polar("y", start=0),
+ggplot(abond_df, aes(x="", y=ASV_proportion, fill=ASV))+
+geom_bar(width = 1, stat = "identity")+ 
+coord_polar("y", start=0)
+)
+
+ASVdf <- ASVdf %>% arrange(desc(Abondance))
+ggplot(ASVdf, aes(x=reorder(ASV,Abondance), y=Abondance))+ 
+geom_bar(stat = "identity")+ 
+ggtitle("Abondance des ASV") +
+xlab("ASV")+ 
+geom_segment(aes(x=805, y=0.049668050, xend=1065, yend=0.049668050), arrow=arrow(), size=0.1, color="blue")+
+geom_segment(aes(x=780, y=0.039987351, xend=1040, yend=0.039987351), arrow=arrow(), size=0.1, color="red")+
+geom_segment(aes(x=720, y=0.023435878, xend=980, yend=0.023435878), arrow=arrow(), size=0.1, color="green")+ 
+geom_text(aes(x=765, y=0.057), label="ASV67", size=3, color="blue")+ 
+geom_text(aes(x=740, y=0.042), label="ASV85", size=3, color="red")+ 
+geom_text(aes(x=680, y=0.026), label="ASV126", size=3, color="green")
 ```
-
