@@ -1,7 +1,13 @@
-CC2
+**CC2 Pierric MATHIS- -FUMEL**
 ================
 
-# Installation des packages
+| Les données sur lesquelles s’applique ce script proviennent de l’article suivant :                                                                                                                                            |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Domínguez, J., Aira, M., Crandall, K.A. et al. Earthworms drastically change fungal and bacterial communities during vermicomposting of sewage sludge. Sci Rep 11, 15556 (2021). <https://doi.org/10.1038/s41598-021-95099-z> |
+
+# Préliminaires
+
+## Installation des packages
 
 ``` bash
 sudo apt-get update -y 
@@ -27,9 +33,12 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 install.packages("vegan")
 install.packages("dplyr")
 install.packages("ggvenn")
+install.packages("ggpubr")
 ```
 
-# Chargement des packages
+## Chargement des packages
+
+A relancer à chaque fois
 
 ``` r
 library("knitr")
@@ -46,16 +55,30 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 library("vegan")
 library("dplyr")
 library("ggvenn")
+library("ggpubr")
 ```
 
 ``` r
 set.seed(100)
 ```
 
-# Préparation des données
+# Méthodes
 
-On télécharge les données dans /EcoG-2/CC2_data.  
-On indique le chemin vers nos données.
+## Préparation des données
+
+On télécharge les données sur le site de l’ENA *copier dans un fichier
+texte, ici “data”, puis sauver dans le dossier voulu*  
+\> sed ’ <s@ftp.sra.ebi.ac.uk>@ftp://ftp.sra.ebi.ac.uk@g ’
+/home/rstudio/EcoGeno2/data  
+*remplacer le contenu de “data” par le résultat, puis sauver*  
+\> sed ’ s@;@ @g ’ /home/rstudio/EcoGeno2/data  
+*remplacer le contenu de “data” par le résultat, puis sauver*  
+*mettre à la ligne chaque adresse dans data, puis sauver*  
+*pour télécharger dans “EcoGeno2”, d’abord le choisir comme dossier de
+travail (set working directory)*  
+\> wget -i /home/rstudio/EcoGeno2/data
+
+**Indiquer le chemin vers nos données**
 
 ``` r
 path <- "/home/rstudio/EcoG-2/CC2_data"
@@ -79,23 +102,17 @@ list.files(path)
     ## [43] "SRR14295234_2.fastq.gz" "SRR14295235"            "SRR14295235_1.fastq.gz"
     ## [46] "SRR14295235_2.fastq.gz"
 
-Répartir les reads, extraire les noms,
+**Répartir les reads et extraire les noms**
 
 ``` r
 fnFs <- sort(list.files(path, pattern = "_1.fastq.gz"))
 fnRs <- sort(list.files(path, pattern = "_2.fastq.gz"))
-
 sampleNames <- sapply(strsplit(fnFs,"_"),'[',1)    
-#boues <- c(sampleNames[6:7],sampleNames[9],sampleNames[13:14])
-#déjections <- c(sampleNames[8],sampleNames[10:12],sampleNames[15])
-#compost <- sampleNames[1:5]
-#sampleNames <- c(boues,déjections,compost)
-
 fnFs <- file.path(path,fnFs)  
 fnRs <- file.path(path,fnRs)
 ```
 
-Inspection des profils qualité
+**Inspecter les profils qualité**
 
 ``` r
 plotQualityProfile(fnFs[1:2])
@@ -104,10 +121,12 @@ plotQualityProfile(fnFs[1:2])
     ## Warning: `guides(<scale> = FALSE)` is deprecated. Please use `guides(<scale> =
     ## "none")` instead.
 
-![](CC2_files/figure-gfm/unnamed-chunk-8-1.png)<!-- --> On a une bonne
-qualité pour les reads forward. On choisit d’ôter quelques derniers
-nucléotides en coupant à la 140e position en plus d’enlever les 10
-premières bases, qui sont plus susceptibles de contenir des erreurs.
+![](CC2_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+*On a une bonne qualité pour les reads forward. On choisit d’ôter
+quelques derniers nucléotides en coupant à la 140e position (pour se
+conformer à ce qui a été fait dans l’étude) en plus d’enlever les 10
+premières bases, qui sont plus susceptibles de contenir des erreurs.*
 
 ``` r
 plotQualityProfile(fnRs[1:2])
@@ -116,12 +135,14 @@ plotQualityProfile(fnRs[1:2])
     ## Warning: `guides(<scale> = FALSE)` is deprecated. Please use `guides(<scale> =
     ## "none")` instead.
 
-![](CC2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- --> On a une bonne
-qualité pour les reads reverse. On choisit d’ôter quelques derniers
-nucléotides en coupant à la 130e position en plus d’enlever les 10
-premières bases, qui sont plus susceptibles de contenir des erreurs.
+![](CC2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-Définir les noms de fichiers pour les fastq.gz filtrés
+*On a une bonne qualité pour les reads reverse. On choisit d’ôter
+quelques derniers nucléotides en coupant à la 130e position (pour se
+conformer à ce qui a été fait dans l’étude) en plus d’enlever les 10
+premières bases, qui sont plus susceptibles de contenir des erreurs.*
+
+**Définir les noms de fichiers pour les fastq.gz filtrés**
 
 ``` r
 filt_path <- file.path(path,"filtered") 
@@ -130,7 +151,7 @@ filtFs <- file.path(filt_path,paste0(sampleNames, "_F_filt.fastq.gz"))
 filtRs <- file.path(filt_path,paste0(sampleNames, "_R_filt.fastq.gz"))
 ```
 
-Filtrer les reads
+**Filtrer les reads**
 
 ``` r
 out <- filterAndTrim(fnFs,filtFs,fnRs,filtRs,truncLen=c(140,130),
@@ -147,144 +168,19 @@ head(out)
     ## SRR14295225_1.fastq.gz     6606      6435
     ## SRR14295226_1.fastq.gz     7496      7301
 
-# Définir les ASVs
+## Définition des ASVs
 
-Dérépliquer
+**Dérépliquer**
 
 ``` r
 derepFs <- derepFastq(filtFs, verbose=TRUE)  
-```
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295221_F_filt.fastq.gz
-
-    ## Encountered 3524 unique sequences from 9498 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295222_F_filt.fastq.gz
-
-    ## Encountered 1784 unique sequences from 5674 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295223_F_filt.fastq.gz
-
-    ## Encountered 3893 unique sequences from 11310 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295224_F_filt.fastq.gz
-
-    ## Encountered 2261 unique sequences from 7029 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295225_F_filt.fastq.gz
-
-    ## Encountered 2470 unique sequences from 6435 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295226_F_filt.fastq.gz
-
-    ## Encountered 2609 unique sequences from 7301 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295227_F_filt.fastq.gz
-
-    ## Encountered 2571 unique sequences from 7010 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295228_F_filt.fastq.gz
-
-    ## Encountered 2755 unique sequences from 9493 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295229_F_filt.fastq.gz
-
-    ## Encountered 2612 unique sequences from 7002 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295230_F_filt.fastq.gz
-
-    ## Encountered 2758 unique sequences from 8647 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295231_F_filt.fastq.gz
-
-    ## Encountered 2505 unique sequences from 7932 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295232_F_filt.fastq.gz
-
-    ## Encountered 3082 unique sequences from 9584 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295233_F_filt.fastq.gz
-
-    ## Encountered 2829 unique sequences from 7289 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295234_F_filt.fastq.gz
-
-    ## Encountered 2262 unique sequences from 5733 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295235_F_filt.fastq.gz
-
-    ## Encountered 3412 unique sequences from 10466 total sequences read.
-
-``` r
 derepRs <- derepFastq(filtRs, verbose=TRUE)
-```
 
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295221_R_filt.fastq.gz
-
-    ## Encountered 3594 unique sequences from 9498 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295222_R_filt.fastq.gz
-
-    ## Encountered 1682 unique sequences from 5674 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295223_R_filt.fastq.gz
-
-    ## Encountered 4019 unique sequences from 11310 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295224_R_filt.fastq.gz
-
-    ## Encountered 2277 unique sequences from 7029 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295225_R_filt.fastq.gz
-
-    ## Encountered 2391 unique sequences from 6435 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295226_R_filt.fastq.gz
-
-    ## Encountered 2393 unique sequences from 7301 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295227_R_filt.fastq.gz
-
-    ## Encountered 2333 unique sequences from 7010 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295228_R_filt.fastq.gz
-
-    ## Encountered 2672 unique sequences from 9493 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295229_R_filt.fastq.gz
-
-    ## Encountered 2459 unique sequences from 7002 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295230_R_filt.fastq.gz
-
-    ## Encountered 2693 unique sequences from 8647 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295231_R_filt.fastq.gz
-
-    ## Encountered 2290 unique sequences from 7932 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295232_R_filt.fastq.gz
-
-    ## Encountered 2898 unique sequences from 9584 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295233_R_filt.fastq.gz
-
-    ## Encountered 2590 unique sequences from 7289 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295234_R_filt.fastq.gz
-
-    ## Encountered 2134 unique sequences from 5733 total sequences read.
-
-    ## Dereplicating sequence entries in Fastq file: /home/rstudio/EcoG-2/CC2_data/filtered/SRR14295235_R_filt.fastq.gz
-
-    ## Encountered 3151 unique sequences from 10466 total sequences read.
-
-``` r
 names(derepFs) <- sampleNames
 names(derepRs) <- sampleNames
 ```
 
-Estimation du taux d’erreur
+**Estimer le taux d’erreur**
 
 ``` r
 errF <- learnErrors(filtFs, multithread=TRUE )
@@ -316,19 +212,20 @@ plotErrors(errR, nominalQ=TRUE)
 
     ## Warning: Transformation introduced infinite values in continuous y-axis
 
-![](CC2_files/figure-gfm/unnamed-chunk-13-2.png)<!-- --> Les taux
-d’erreur pour chaque transition possible (A→C, A→G, …) sont indiqués.
-Les points sont les taux d’erreur observés pour chaque score de qualité
-du consensus.  
+![](CC2_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+
+*Les taux d’erreur pour chaque transition possible (A→C, A→G, …) sont
+indiqués. Les points sont les taux d’erreur observés pour chaque score
+de qualité du consensus.*  
 \* La ligne noire montre les taux d’erreur estimés.  
 \* La ligne rouge montre les taux d’erreur attendus selon la définition
 nominale du Q-score.  
-Ici, les taux d’erreur estimés (ligne noire) correspondent bien aux taux
-observés (points), et les taux d’erreur diminuent avec l’augmentation de
-la qualité, comme prévu. Tout semble raisonnable et nous poursuivons
-avec confiance.
+*Ici, les taux d’erreur estimés (ligne noire) correspondent bien aux
+taux observés (points), et les taux d’erreur diminuent avec
+l’augmentation de la qualité, comme prévu. Tout semble raisonnable et
+nous poursuivons avec confiance.*
 
-Inférence
+**Inférer **
 
 ``` r
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE)  
@@ -370,7 +267,7 @@ dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
     ## Sample 14 - 5733 reads in 2134 unique sequences.
     ## Sample 15 - 10466 reads in 3151 unique sequences.
 
-Inspection du premier objet.
+**Inspecter le premier objet**
 
 ``` r
 dadaFs[[1]] 
@@ -380,15 +277,15 @@ dadaFs[[1]]
     ## 355 sequence variants were inferred from 3524 input unique sequences.
     ## Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16
 
-# Construire le tableau des séquences et supprimer les chimères
+## Construction du tableau des séquences et suppression des chimères
 
-Fusion des reads appariés.
+**Fusionner les reads appariés**
 
 ``` r
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs)
 ```
 
-Inspecter le data.frame de fusion du premier échantillon.
+**Inspecter la dataframe de fusion du premier échantillon**
 
 ``` r
 head(mergers[[1]])
@@ -409,7 +306,7 @@ head(mergers[[1]])
     ## 5       340       4       1     17         0      0      2   TRUE
     ## 6       246       6       4     17         0      0      1   TRUE
 
-Construction d’une table d’ASV
+**Construire une table d’ASV**
 
 ``` r
 seqtabAll <- makeSequenceTable(mergers[!grepl("Mock", names(mergers))])  
@@ -422,11 +319,11 @@ table(nchar(getSequences(seqtabAll)))
     ##  257  258 
     ##    2    1
 
-Ce tableau contient 1226 ASV, et les longueurs de nos séquences
+*Ce tableau contient 1226 ASV, et les longueurs de nos séquences
 fusionnées se situent toutes dans la plage attendue pour cet amplicon
-V4, en majorité à 253 nucléotides.
+V4, en majorité à 253 nucléotides.*
 
-Suppression des chimères.
+**Supprimer les chimères**
 
 ``` r
 seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
@@ -440,11 +337,11 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 
     ## [1] 0.08319739
 
-102 chimères ont été supprimées, soit 8% de nos ASVs.
+*102 chimères ont été supprimées, soit 8% de nos ASVs. *
 
-# Assigner la taxonomie
+## Assignement de la taxonomie
 
-Acquisition du jeu d’entraînement Silva (*non-exécuté*)
+**Acquérir le jeu d’entraînement Silva **
 
 ``` bash
 cd home/rstudio
@@ -452,7 +349,7 @@ wget https://zenodo.org/record/4587955/files/silva_nr99_v138.1_train_set.fa.gz
 wget https://zenodo.org/record/4587955/files/silva_species_assignment_v138.1.fa.gz
 ```
 
-Assignement taxonomique
+**Assigner la taxonomie, puis également les espèces**
 
 ``` r
 taxTab <- assignTaxonomy(seqtabNoC, "/home/rstudio/EcoG-2/silva_nr99_v138.1_train_set.fa.gz", multithread=TRUE)
@@ -476,7 +373,7 @@ unname(head(taxTab))
     ## [5,] "Chitinophagaceae"   NA                 NA  
     ## [6,] "Weeksellaceae"      "Chryseobacterium" NA
 
-Arbre phylogénétique
+**Tracer un arbre phylogénétique**
 
 ``` r
 seqs <- getSequences(seqtabNoC)
@@ -494,9 +391,9 @@ plot(fitGTR)
 
 ![](CC2_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
-# Phyloseq
+## Utilisation de phyloseq
 
-Classification des échantillons
+**Classifier les échantillons**
 
 ``` r
 #Après des heures de tentatives, je me suis résigné à assigner l'origine de chaque échantillon manuellement...
@@ -516,7 +413,7 @@ sampleType$Types[sampleNumber==25] <- "Compost"
 rownames(sampleType) <- sampleNames
 ```
 
-Combiner les données dans un objet phyloseq
+**Combiner les données dans un objet phyloseq**
 
 ``` r
 ps <- phyloseq(otu_table(seqtabNoC, taxa_are_rows=FALSE), 
@@ -536,7 +433,7 @@ ps
 ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les échantillons dans le bon ordre
 ```
 
-On remplace les séquences par ASV.
+**Remplacer les séquences par les ASV numérotés**
 
 ``` r
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
@@ -553,34 +450,37 @@ ps
     ## phy_tree()    Phylogenetic Tree: [ 1124 tips and 1122 internal nodes ]
     ## refseq()      DNAStringSet:      [ 1124 reference sequences ]
 
-# Courbes de raréfaction
+# Figures de l’article
+
+Ici, on cherche à reproduire les principales figures de l’article.  
+## Courbes de raréfaction
 
 ``` r
 col_boues <- "brown4"
 col_déjections <- "darkgoldenrod2"
 col_compost <- "darkolivegreen3"
-colors <- c(col_compost, col_compost, col_compost, col_compost, col_compost, col_boues, col_boues, col_déjections, col_boues, col_déjections, col_déjections, col_déjections, col_boues, col_boues, col_déjections)
+colors <- c(col_compost, col_compost, col_compost, col_compost, col_compost, col_boues, col_boues, col_déjections, col_boues, col_déjections, col_déjections, col_déjections, col_boues, col_boues, col_déjections)    #on définit les couleurs qu'on va utiliser pour chaque origine des échantillons
 rarecurve(seqtabNoC, step=1000, ylab="ASVs", col=colors, label=F)
-legend("bottomright", legend=c("Boues","Déjections","Compost"), fill=c(col_boues,col_déjections,col_compost))
+legend("bottomright", legend=c("Boues","Déjections","Compost"), fill=c(col_boues,col_déjections,col_compost), title="Courbes de raréfaction")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- --> Cela montre que
-la profondeur de séquençage est optimale. Cependant, de nombreuses
-tentatives n’ont pas suffi à colorer les courbes en fonction de
-l’échantillon (boues, déjections, compost).
+![](CC2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
-# Abondance différentielle
+*Cela montre que la profondeur de séquençage est optimale.*  
+*Ces courbes sont identiques à celles retrouvées dans les Figures
+supplémentaires.*  
+## Abondance différentielle
 
 ``` r
 ps.rel <- transform_sample_counts(ps, function(x) x/sum(x)*100)   
-glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)    # Agglomération des taxa
+glom <- tax_glom(ps.rel, taxrank = 'Phylum', NArm = FALSE)    #agglomérer les taxa
 ps.melt <- psmelt(glom)
 ps.melt$Phylum <- as.character(ps.melt$Phylum)
 
 ps.melt <- ps.melt %>% 
   group_by(Types, Phylum) %>%
   mutate(median=median(Abundance))  
-keep <- unique(ps.melt$Phylum[ps.melt$median > 1])    # Sélection des groupes avec median>1
+keep <- unique(ps.melt$Phylum[ps.melt$median > 1])    #sélection des groupes avec median>1
 ps.melt$Phylum[!(ps.melt$Phylum %in% keep)] <- "others"   
 ps.melt_sum <- ps.melt %>%      #pour obtenir les mêmes lignes ensemble
   group_by(Types,Phylum) %>%
@@ -598,21 +498,28 @@ ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) +
         axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- --> A la différence
-de la publication d’origine, ici les Planctomycetota sont présents en
-abondance supérieure à celle des Sumerlaeota.
+![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
-# Alpha-diversité
+*On retrouve les phyla bactériens les plus abondants selon le type
+d’échantillon.*  
+*A la différence de la publication, ici les Planctomycetota sont
+présents en abondance supérieure à celle des Sumerlaeota, et il
+semblerait que le seuil choisi soit plus bas.*  
+## Alpha-diversité
 
 ``` r
-ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost"))
+ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les échantillons dans le bon ordre
 plot_richness(ps, x="Types", measures="Chao1", color="Types")+
 scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
-# Bêta-diversité
+*La diversité diminue après passage dans l’intestin, puis augmente lors
+de la phase de maturation.*  
+*Globalement, on retrouve des diversités alpha similaires à celles
+trouvées dans l’article.*  
+## Bêta-diversité
 
 ``` r
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
@@ -671,13 +578,14 @@ plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")+
 scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- --> Les
-échantillons sont bien regroupés par type de prélèvement et les trois
-points sont très éloignés les uns des autres, comme on le retrouve sur
-la figure de l’article. Il y a donc très peu d’ASVs en commun entre les
-boues, les déjections, le compost.
+![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
-# Diagramme de Venn
+*Il y a donc très peu d’ASVs en commun entre les boues, les déjections,
+le compost.*  
+*Les échantillons sont bien regroupés par type de prélèvement et les
+trois points sont très éloignés les uns des autres, comme on le retrouve
+sur la figure de l’article.*  
+## Diagramme de Venn
 
 ``` r
 ps.melt <- psmelt(ps.prop)
@@ -705,10 +613,13 @@ ASVlist <- list(Boues=pres_abs$ASV[pres_abs$Types=="Boues"], Déjections=pres_ab
 ggvenn(ASVlist, fill_color = c(col_boues, col_déjections, col_compost), stroke_linetype = "blank", set_name_size = 8)
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> Ici, chaque
-catégorie comporte plus d’ASVs que ce qu’ont trouvé les chercheurs. Le
-traitement des données a dû être différent. Cependant, ce sont bien les
-mêmes proportions qui sont retrouvées.
+![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+*Très peu d’ASVs sont en commun entre les échantillons, et seuls 7
+d’entre eux sont partagés par les trois.*  
+*Ici, chaque catégorie comporte légèrement plus d’ASVs que ce qu’ont
+trouvé les chercheurs. Le traitement des données a dû être différent.
+Cependant, ce sont bien les mêmes proportions qui sont retrouvées.*
 
 # Nouvelle question
 
@@ -716,8 +627,9 @@ On cherche ici à répondre à une question à laquelle l’article n’a pas
 répondu : quelle abondance représente les 7 ASVs partagés par les trois
 échantillons ?
 
+## Afficher les 7 ASVs en commun
+
 ``` r
-# Afficher les 7 ASVs en commun
 pres_abs$Types <- as.character(pres_abs$Types)
 pres_abs$Types [pres_abs$Types == "Boues"] <- 1
 pres_abs$Types [pres_abs$Types == "Déjections"] <- 2
@@ -727,25 +639,23 @@ pres_abs <- pres_abs %>%
 group_by(ASV) %>%
 summarise(Types=sum(Types))
 commonASV <- pres_abs$ASV[pres_abs$Types==6]
-commonASV 
+commonASV
 ```
 
     ## [1] "ASV126" "ASV148" "ASV178" "ASV249" "ASV380" "ASV67"  "ASV85"
 
+## Sélectionner ces ASV
+
 ``` r
-# Sélectionner ces ASV
 ASVdf <- ASVdf %>%
 group_by(ASV) %>%
 summarise(Abondance = sum(Abondance))
-print(ASVdf$Abondance[ASVdf$ASV=="ASV126"])
+commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="ASV178" | ASVdf$ASV=="ASV249" | ASVdf$ASV=="ASV380" | ASVdf$ASV=="ASV67" | ASVdf$ASV=="ASV85"),]
 ```
 
-    ## [1] 0.02343588
+## Comparer la proportion de ces 7 ASV avec ce que représente 7/1124
 
 ``` r
-commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="ASV178" | ASVdf$ASV=="ASV249" | ASVdf$ASV=="ASV380" | ASVdf$ASV=="ASV67" | ASVdf$ASV=="ASV85"),]
-
-# Représentation graphique   
 abond_df <- data.frame(ASV = c("Communs", "Totaux"), Abondance_pcent = c(sum(commonASVdf$Abondance)/15, 1), ASV_proportion = c(7/1124, 1))
 abond_df
 ```
@@ -753,33 +663,6 @@ abond_df
     ##       ASV Abondance_pcent ASV_proportion
     ## 1 Communs      0.01115502    0.006227758
     ## 2  Totaux      1.00000000    1.000000000
-
-``` r
-(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])*100
-```
-
-    ## [1] 1.115502
-
-``` r
-(abond_df$Abondance_pcent[1]/abond_df$Abondance_pcent[2])/(abond_df$ASV_proportion[1]/abond_df$ASV_proportion[2])
-```
-
-    ## [1] 1.791177
-
-``` r
-library(ggpubr)
-```
-
-    ## 
-    ## Attaching package: 'ggpubr'
-
-    ## The following object is masked from 'package:VennDiagram':
-    ## 
-    ##     rotate
-
-    ## The following object is masked from 'package:ape':
-    ## 
-    ##     rotate
 
 ``` r
 ggarrange(
@@ -792,7 +675,14 @@ coord_polar("y", start=0)
 )
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+*Ces ASV partagés sont donc ne représentent donc pas une part importante
+de l’ensemble des communautés bactériennes. On voit toutefois qu’ils
+représentent presque 2 fois ce à quoi on s’attendrait si l’ensemble des
+ASVs avait la même abondance.*
+
+## Visualiser l’abondance des 3 ASVs communs les plus présents
 
 ``` r
 ASVdf <- ASVdf %>% arrange(desc(Abondance))
@@ -803,9 +693,13 @@ xlab("ASV")+
 geom_segment(aes(x=805, y=0.049668050, xend=1065, yend=0.049668050), arrow=arrow(), size=0.1, color="blue")+
 geom_segment(aes(x=780, y=0.039987351, xend=1040, yend=0.039987351), arrow=arrow(), size=0.1, color="red")+
 geom_segment(aes(x=720, y=0.023435878, xend=980, yend=0.023435878), arrow=arrow(), size=0.1, color="green")+ 
-geom_text(aes(x=765, y=0.057), label="ASV67", size=3, color="blue")+ 
-geom_text(aes(x=740, y=0.042), label="ASV85", size=3, color="red")+ 
-geom_text(aes(x=680, y=0.026), label="ASV126", size=3, color="green")
+geom_text(aes(x=740, y=0.075), label="ASV67", size=4, color="blue")+ 
+geom_text(aes(x=710, y=0.048), label="ASV85", size=4, color="red")+ 
+geom_text(aes(x=640, y=0.024), label="ASV126", size=4, color="green")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-31-2.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+
+*Quand on regarde les 3 ASV communs les plus abondants, on remarque que
+ceux-ci sont moyennement abondants : ils ne figurent pas parmi les plus
+présents, mais ne font pas non plus partie de la biosphère rare.*
