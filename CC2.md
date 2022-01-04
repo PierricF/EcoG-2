@@ -5,9 +5,11 @@
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Domínguez, J., Aira, M., Crandall, K.A. et al. Earthworms drastically change fungal and bacterial communities during vermicomposting of sewage sludge. Sci Rep 11, 15556 (2021). <https://doi.org/10.1038/s41598-021-95099-z> |
 
-# Préliminaires
+![](CC2_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
-## Installation des packages
+# <span style="color: #1b019b">Préliminaires</span>
+
+## <span style="color: #1a02d6">Installation des packages</span>
 
 ``` bash
 sudo apt-get update -y 
@@ -36,7 +38,7 @@ install.packages("ggvenn")
 install.packages("ggpubr")
 ```
 
-## Chargement des packages
+## <span style="color: #1a02d6">Chargement des packages</span>
 
 A relancer à chaque fois
 
@@ -62,9 +64,9 @@ library("ggpubr")
 set.seed(100)
 ```
 
-# Méthodes
+# <span style="color: #1b019b">Méthodes</span>
 
-## Préparation des données
+## <span style="color: #1a02d6">Préparation des données</span>
 
 On télécharge les données sur le site de l’ENA *copier dans un fichier
 texte, ici “data”, puis sauver dans le dossier voulu*  
@@ -121,7 +123,7 @@ plotQualityProfile(fnFs[1:2])
     ## Warning: `guides(<scale> = FALSE)` is deprecated. Please use `guides(<scale> =
     ## "none")` instead.
 
-![](CC2_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 *On a une bonne qualité pour les reads forward. On choisit d’ôter
 quelques derniers nucléotides en coupant à la 140e position (pour se
@@ -135,7 +137,7 @@ plotQualityProfile(fnRs[1:2])
     ## Warning: `guides(<scale> = FALSE)` is deprecated. Please use `guides(<scale> =
     ## "none")` instead.
 
-![](CC2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 *On a une bonne qualité pour les reads reverse. On choisit d’ôter
 quelques derniers nucléotides en coupant à la 130e position (pour se
@@ -168,7 +170,7 @@ head(out)
     ## SRR14295225_1.fastq.gz     6606      6435
     ## SRR14295226_1.fastq.gz     7496      7301
 
-## Définition des ASVs
+## <span style="color: #1a02d6">Définition des ASVs</span>
 
 **Dérépliquer**
 
@@ -202,7 +204,7 @@ plotErrors(errF, nominalQ=TRUE)
 
     ## Warning: Transformation introduced infinite values in continuous y-axis
 
-![](CC2_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 plotErrors(errR, nominalQ=TRUE)
@@ -212,7 +214,7 @@ plotErrors(errR, nominalQ=TRUE)
 
     ## Warning: Transformation introduced infinite values in continuous y-axis
 
-![](CC2_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
 
 *Les taux d’erreur pour chaque transition possible (A→C, A→G, …) sont
 indiqués. Les points sont les taux d’erreur observés pour chaque score
@@ -280,7 +282,7 @@ dadaFs[[1]]
     ## 355 sequence variants were inferred from 3524 input unique sequences.
     ## Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16
 
-## Construction du tableau des séquences et suppression des chimères
+## <span style="color: #1a02d6">Construction du tableau des séquences et suppression des chimères</span>
 
 **Fusionner les reads appariés**
 
@@ -342,7 +344,7 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 
 *102 chimères ont été supprimées, soit 8% de nos ASVs.*
 
-## Assignement de la taxonomie
+## <span style="color: #1a02d6">Assignement de la taxonomie</span>
 
 **Acquérir le jeu d’entraînement Silva**
 
@@ -392,9 +394,9 @@ fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
 plot(fitGTR)
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-## Utilisation de phyloseq
+## <span style="color: #1a02d6">Utilisation de phyloseq</span>
 
 **Classifier les échantillons**
 
@@ -453,11 +455,11 @@ ps
     ## phy_tree()    Phylogenetic Tree: [ 1124 tips and 1122 internal nodes ]
     ## refseq()      DNAStringSet:      [ 1124 reference sequences ]
 
-# Figures de l’article
+# <span style="color: #1b019b">Figures de l’article</span>
 
 Ici, on cherche à reproduire les principales figures de l’article.
 
-## Courbes de raréfaction
+## <span style="color: #1a02d6">Courbes de raréfaction</span>
 
 ``` r
 col_boues <- "brown4"
@@ -468,13 +470,13 @@ rarecurve(seqtabNoC, step=1000, ylab="ASVs", col=colors, label=F)
 legend("bottomright", legend=c("Boues","Déjections","Compost"), fill=c(col_boues,col_déjections,col_compost), title="Courbes de raréfaction")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 *Cela montre que la profondeur de séquençage est optimale.*  
 *Ces courbes sont identiques à celles retrouvées dans les Figures
 supplémentaires.*
 
-## Abondance différentielle
+## <span style="color: #1a02d6">Abondance différentielle</span>
 
 ``` r
 ps.rel <- transform_sample_counts(ps, function(x) x/sum(x)*100)   
@@ -503,7 +505,7 @@ ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) +
         axis.text.x.bottom = element_text(angle=45,vjust=1,hjust=1))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 *On retrouve les phyla bactériens les plus abondants selon le type
 d’échantillon.*  
@@ -511,7 +513,7 @@ d’échantillon.*
 présents en abondance supérieure à celle des Sumerlaeota, et il
 semblerait que le seuil choisi soit plus bas.*
 
-## Alpha-diversité
+## <span style="color: #1a02d6">Alpha-diversité</span>
 
 ``` r
 ps@sam_data$Types <- factor(ps@sam_data$Types, levels=c("Boues", "Déjections", "Compost")) #pour mettre les échantillons dans le bon ordre
@@ -519,14 +521,14 @@ plot_richness(ps, x="Types", measures="Chao1", color="Types")+
 scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 *La diversité diminue après passage dans l’intestin, puis augmente lors
 de la phase de maturation.*  
 *Globalement, on retrouve des diversités alpha similaires à celles
 trouvées dans l’article.*
 
-## Bêta-diversité
+## <span style="color: #1a02d6">Bêta-diversité</span>
 
 ``` r
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
@@ -585,7 +587,7 @@ plot_ordination(ps.prop, ord.nmds.bray, color="Types", title="Bray-Curtis")+
 scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 *Il y a donc très peu d’ASVs en commun entre les boues, les déjections,
 le compost.*  
@@ -593,7 +595,7 @@ le compost.*
 trois points sont très éloignés les uns des autres, comme on le retrouve
 sur la figure de l’article.*
 
-## Diagramme de Venn
+## <span style="color: #1a02d6">Diagramme de Venn</span>
 
 ``` r
 ps.melt <- psmelt(ps.prop)
@@ -621,7 +623,7 @@ ASVlist <- list(Boues=pres_abs$ASV[pres_abs$Types=="Boues"], Déjections=pres_ab
 ggvenn(ASVlist, fill_color = c(col_boues, col_déjections, col_compost), stroke_linetype = "blank", set_name_size = 8)
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
 *Très peu d’ASVs sont en commun entre les échantillons, et seuls 7
 d’entre eux sont partagés par les trois.*  
@@ -629,13 +631,13 @@ d’entre eux sont partagés par les trois.*
 trouvé les chercheurs. Le traitement des données a dû être différent.
 Cependant, ce sont bien les mêmes proportions qui sont retrouvées.*
 
-# Nouvelle question
+# <span style="color: #1b019b">Nouvelle question</span>
 
 On cherche ici à répondre à une question à laquelle l’article n’a pas
 répondu : quelle abondance représente les 7 ASVs partagés par les trois
 échantillons ?
 
-## Afficher les 7 ASVs en commun
+## <span style="color: #1a02d6">Afficher les 7 ASVs en commun</span>
 
 ``` r
 pres_abs$Types <- as.character(pres_abs$Types)
@@ -652,7 +654,7 @@ commonASV
 
     ## [1] "ASV126" "ASV148" "ASV178" "ASV249" "ASV380" "ASV67"  "ASV85"
 
-## Sélectionner ces ASV
+## <span style="color: #1a02d6">Sélectionner ces ASV</span>
 
 ``` r
 ASVdf <- ASVdf %>%
@@ -661,7 +663,7 @@ summarise(Abondance = sum(Abondance))
 commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="ASV178" | ASVdf$ASV=="ASV249" | ASVdf$ASV=="ASV380" | ASVdf$ASV=="ASV67" | ASVdf$ASV=="ASV85"),]
 ```
 
-## Comparer la proportion de ces 7 ASV avec ce que représente 7/1124
+## <span style="color: #1a02d6">Comparer la proportion de ces 7 ASV avec ce que représente 7/1124</span>
 
 ``` r
 abond_df <- data.frame(ASV = c("Communs", "Totaux"), Abondance_pcent = c(sum(commonASVdf$Abondance)/15, 1), ASV_proportion = c(7/1124, 1))
@@ -683,14 +685,14 @@ coord_polar("y", start=0)
 )
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
-*Ces ASV partagés sont donc ne représentent donc pas une part importante
-de l’ensemble des communautés bactériennes. On voit toutefois qu’ils
+*Ces ASV partagés ne représentent donc pas une part importante de
+l’ensemble des communautés bactériennes. On voit toutefois qu’ils
 représentent presque 2 fois ce à quoi on s’attendrait si l’ensemble des
 ASVs avait la même abondance.*
 
-## Visualiser l’abondance des 3 ASVs communs les plus présents
+## <span style="color: #1a02d6">Visualiser l’abondance des 3 ASVs communs les plus présents</span>
 
 ``` r
 ASVdf <- ASVdf %>% arrange(desc(Abondance))
@@ -702,12 +704,16 @@ geom_segment(aes(x=805, y=0.049668050, xend=1065, yend=0.049668050), arrow=arrow
 geom_segment(aes(x=780, y=0.039987351, xend=1040, yend=0.039987351), arrow=arrow(), size=0.1, color="red")+
 geom_segment(aes(x=720, y=0.023435878, xend=980, yend=0.023435878), arrow=arrow(), size=0.1, color="green")+ 
 geom_text(aes(x=760, y=0.060), label="ASV67", size=4, color="blue")+ 
-geom_text(aes(x=730, y=0.038), label="ASV85", size=4, color="red")+ 
-geom_text(aes(x=660, y=0.020), label="ASV126", size=4, color="green")
+geom_text(aes(x=730, y=0.040), label="ASV85", size=4, color="red")+ 
+geom_text(aes(x=665, y=0.020), label="ASV126", size=4, color="green")
 ```
 
-![](CC2_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](CC2_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 *Quand on regarde les 3 ASV communs les plus abondants, on remarque que
-ceux-ci sont moyennement abondants : ils ne figurent pas parmi les plus
-présents, mais ne font pas non plus partie de la biosphère rare.*
+ceux-ci sont moyennement abondants : ils ne figurent dans le pic des
+plus présents, mais ne semblent pas non plus faire partie de la
+biosphère rare.*  
+*Cela concorde avec la bêta-diversité estimée par l’indice de
+Bray-Curtis, car si ces ASV communs étaient prédominants, les trois
+types d’échantillons auraient été bien plus similaires.*
