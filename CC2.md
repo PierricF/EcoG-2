@@ -710,7 +710,7 @@ geom_text(aes(x=665, y=0.020), label="ASV126", size=4, color="green")
 
 ![](CC2_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
-*Quand on regarde les 3 ASV communs les plus abondants, on remarque que
+*Quand on regarde les 3 ASVs communs les plus abondants, on remarque que
 ceux-ci sont moyennement abondants : ils ne figurent dans le pic des
 plus présents, mais ne semblent pas non plus faire partie de la
 biosphère rare.*  

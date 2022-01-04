@@ -394,5 +394,5 @@ geom_text(aes(x=665, y=0.020), label="ASV126", size=4, color="green")
 ```  
 
   
-*Quand on regarde les 3 ASV communs les plus abondants, on remarque que ceux-ci sont moyennement abondants : ils ne figurent dans le pic des plus présents, mais ne semblent pas non plus faire partie de la biosphère rare.*  
+*Quand on regarde les 3 ASVs communs les plus abondants, on remarque que ceux-ci sont moyennement abondants : ils ne figurent dans le pic des plus présents, mais ne semblent pas non plus faire partie de la biosphère rare.*  
 *Cela concorde avec la bêta-diversité estimée par l'indice de Bray-Curtis, car si ces ASV communs étaient prédominants, les trois types d'échantillons auraient été bien plus similaires.*
