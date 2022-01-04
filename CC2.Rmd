@@ -132,8 +132,10 @@ plotErrors(errR, nominalQ=TRUE)
 * La ligne rouge montre les taux d'erreur attendus selon la définition nominale du Q-score.  
 
 *Ici, les taux d'erreur estimés (ligne noire) correspondent bien aux taux observés (points), et les taux d'erreur diminuent avec l'augmentation de la qualité, comme prévu. Tout semble raisonnable et nous poursuivons avec confiance.*  
-  
-**Inférer **  
+
+
+**Inférer**
+
 
 ```{r}
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE)  
@@ -167,9 +169,11 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 *102 chimères ont été supprimées, soit 8% de nos ASVs.*  
 
 ## Assignement de la taxonomie  
-
-**Acquérir le jeu d'entraînement Silva **  
-
+  
+  
+**Acquérir le jeu d'entraînement Silva**  
+  
+  
 ```{bash, cache=TRUE, eval=FALSE}
 cd home/rstudio
 wget https://zenodo.org/record/4587955/files/silva_nr99_v138.1_train_set.fa.gz   

@@ -228,7 +228,7 @@ taux observés (points), et les taux d’erreur diminuent avec
 l’augmentation de la qualité, comme prévu. Tout semble raisonnable et
 nous poursuivons avec confiance.*
 
-**Inférer **
+**Inférer**
 
 ``` r
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE)  
@@ -344,7 +344,7 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 
 ## Assignement de la taxonomie
 
-**Acquérir le jeu d’entraînement Silva **
+**Acquérir le jeu d’entraînement Silva**
 
 ``` bash
 cd home/rstudio
