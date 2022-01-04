@@ -216,10 +216,13 @@ plotErrors(errR, nominalQ=TRUE)
 
 *Les taux d’erreur pour chaque transition possible (A→C, A→G, …) sont
 indiqués. Les points sont les taux d’erreur observés pour chaque score
-de qualité du consensus.*  
-\* La ligne noire montre les taux d’erreur estimés.  
-\* La ligne rouge montre les taux d’erreur attendus selon la définition
-nominale du Q-score.  
+de qualité du consensus.*
+
+-   La ligne noire montre les taux d’erreur estimés.
+
+-   La ligne rouge montre les taux d’erreur attendus selon la définition
+    nominale du Q-score.
+
 *Ici, les taux d’erreur estimés (ligne noire) correspondent bien aux
 taux observés (points), et les taux d’erreur diminuent avec
 l’augmentation de la qualité, comme prévu. Tout semble raisonnable et
@@ -337,7 +340,7 @@ seqtabNoC <- removeBimeraDenovo(seqtabAll, verbose=TRUE)
 
     ## [1] 0.08319739
 
-*102 chimères ont été supprimées, soit 8% de nos ASVs. *
+*102 chimères ont été supprimées, soit 8% de nos ASVs.*
 
 ## Assignement de la taxonomie
 
@@ -452,7 +455,8 @@ ps
 
 # Figures de l’article
 
-Ici, on cherche à reproduire les principales figures de l’article.  
+Ici, on cherche à reproduire les principales figures de l’article.
+
 ## Courbes de raréfaction
 
 ``` r
@@ -468,7 +472,8 @@ legend("bottomright", legend=c("Boues","Déjections","Compost"), fill=c(col_boue
 
 *Cela montre que la profondeur de séquençage est optimale.*  
 *Ces courbes sont identiques à celles retrouvées dans les Figures
-supplémentaires.*  
+supplémentaires.*
+
 ## Abondance différentielle
 
 ``` r
@@ -504,7 +509,8 @@ ggplot(ps.melt_sum, aes(x = Types, y = Abundance, fill = Phylum)) +
 d’échantillon.*  
 *A la différence de la publication, ici les Planctomycetota sont
 présents en abondance supérieure à celle des Sumerlaeota, et il
-semblerait que le seuil choisi soit plus bas.*  
+semblerait que le seuil choisi soit plus bas.*
+
 ## Alpha-diversité
 
 ``` r
@@ -518,7 +524,8 @@ scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 *La diversité diminue après passage dans l’intestin, puis augmente lors
 de la phase de maturation.*  
 *Globalement, on retrouve des diversités alpha similaires à celles
-trouvées dans l’article.*  
+trouvées dans l’article.*
+
 ## Bêta-diversité
 
 ``` r
@@ -584,7 +591,8 @@ scale_color_manual(values=c(col_boues, col_déjections, col_compost))
 le compost.*  
 *Les échantillons sont bien regroupés par type de prélèvement et les
 trois points sont très éloignés les uns des autres, comme on le retrouve
-sur la figure de l’article.*  
+sur la figure de l’article.*
+
 ## Diagramme de Venn
 
 ``` r
@@ -693,9 +701,9 @@ xlab("ASV")+
 geom_segment(aes(x=805, y=0.049668050, xend=1065, yend=0.049668050), arrow=arrow(), size=0.1, color="blue")+
 geom_segment(aes(x=780, y=0.039987351, xend=1040, yend=0.039987351), arrow=arrow(), size=0.1, color="red")+
 geom_segment(aes(x=720, y=0.023435878, xend=980, yend=0.023435878), arrow=arrow(), size=0.1, color="green")+ 
-geom_text(aes(x=740, y=0.075), label="ASV67", size=4, color="blue")+ 
-geom_text(aes(x=710, y=0.048), label="ASV85", size=4, color="red")+ 
-geom_text(aes(x=640, y=0.024), label="ASV126", size=4, color="green")
+geom_text(aes(x=760, y=0.060), label="ASV67", size=4, color="blue")+ 
+geom_text(aes(x=730, y=0.038), label="ASV85", size=4, color="red")+ 
+geom_text(aes(x=660, y=0.020), label="ASV126", size=4, color="green")
 ```
 
 ![](CC2_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
