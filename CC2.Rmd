@@ -364,7 +364,7 @@ commonASVdf <- ASVdf [(ASVdf$ASV=="ASV126" | ASVdf$ASV=="ASV148" | ASVdf$ASV=="A
 ```{r}
 abond_df <- data.frame(ASV = c("Communs", "Totaux"), Abondance_pcent = c(sum(commonASVdf$Abondance)/15, 1), ASV_proportion = c(7/1124, 1))
 abond_df
-```  
+```   
 ```{r}
 ggarrange(
 ggplot(abond_df, aes(x="", y=Abondance_pcent, fill=ASV))+
@@ -378,7 +378,7 @@ coord_polar("y", start=0)
 
 *Ces ASV partagés ne représentent donc pas une part importante de l'ensemble des communautés bactériennes. On voit toutefois qu'ils représentent presque 2 fois ce à quoi on s'attendrait si l'ensemble des ASVs avait la même abondance.*  
   
-## <span style="color: #1a02d6">Visualiser l'abondance des 3 ASVs communs les plus présents</span> 
+## <span style="color: #1a02d6">Visualiser l'abondance des 3 ASV communs les plus présents</span> 
 ```{r}
 ASVdf <- ASVdf %>% arrange(desc(Abondance))
 ggplot(ASVdf, aes(x=reorder(ASV,Abondance), y=Abondance))+ 

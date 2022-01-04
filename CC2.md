@@ -692,7 +692,7 @@ l’ensemble des communautés bactériennes. On voit toutefois qu’ils
 représentent presque 2 fois ce à quoi on s’attendrait si l’ensemble des
 ASVs avait la même abondance.*
 
-## <span style="color: #1a02d6">Visualiser l’abondance des 3 ASVs communs les plus présents</span>
+## <span style="color: #1a02d6">Visualiser l’abondance des 3 ASV communs les plus présents</span>
 
 ``` r
 ASVdf <- ASVdf %>% arrange(desc(Abondance))
